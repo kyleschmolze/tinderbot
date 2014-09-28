@@ -111,8 +111,13 @@ class Bot
 
       for user in users
         sleep(0.5)
-        puts "Liking #{user["name"]}"
-        response = @pyro.like user["_id"]
+        if rand > 0.5 and false # You can enable random disliking here
+          puts "Disliking #{user["name"]}"
+          response = @pyro.dislike user["_id"]
+        else
+          puts "Liking #{user["name"]}"
+          response = @pyro.like user["_id"]
+        end
         match = JSON.parse(response.body)["match"]
         if match
           puts "Matched with #{user["name"]}!"
