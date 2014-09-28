@@ -1,4 +1,5 @@
 .DS_Store
+facebook_*
 *.rbc
 capybara-*.html
 .rspec

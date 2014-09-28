@@ -4,17 +4,31 @@
 class Bot
   require 'pyro'
   attr_reader :pyro
-  attr_accessor :facebook_id, :access_token, :count
+  attr_accessor :facebook_id, :access_token, :count, :latitude
 
   def self.go
     tinder = self.new
 
-    id = `cat facebook_id.txt`.chomp
-    if id.present?
-      puts "Last time, you used Facebook ID #{id}. Reuse this one? (type yes or no)"
-      if gets.chomp == 'yes'
-        tinder.facebook_id = id
+    if File.exists?("facebook_id.txt")
+      id = `cat facebook_id.txt`.chomp
+      if id.present?
+        puts "Last time, you used Facebook ID #{id}. Reuse this one? (type yes or no)"
+        if ['yes', 'y'].include? gets.chomp
+          tinder.facebook_id = id
+        end
       end
+    end
+
+    unless tinder.facebook_id.present?
+      puts "We need your Facebook ID. Go here to find it:"
+      puts "http://findmyfacebookid.com/"
+      puts "Then paste the ID in here:"
+      tinder.facebook_id = gets.chomp
+      while tinder.facebook_id.blank?
+        tinder.facebook_id = gets.chomp
+        puts "Sorry, didn't catch that. What's your Facebook id?" if tinder.facebook_id.blank?
+      end
+      `echo #{tinder.facebook_id} > facebook_id.txt`
     end
 
     unless tinder.facebook_id.present?
@@ -31,18 +45,32 @@ class Bot
 
     puts "\n\n==============================\n\n\n"
 
-    puts 'Great. Now we need an access token. Open this URL in your browser, and when you hit the Facebook "Success" page, *immediately* copy the URL. You will be redirected away within about 2 seconds, so be fast. (You can try as many times as you need though). Here\'s the URL:'
-    puts ""
-    puts "https://www.facebook.com/dialog/oauth?client_id=464891386855067&redirect_uri=https://www.facebook.com/connect/login_success.html&scope=basic_info,email,public_profile,user_about_me,user_activities,user_birthday,user_education_history,user_friends,user_interests,user_likes,user_location,user_photos,user_relationship_details&response_type=token"
-    puts ""
-    puts 'Enter the URL of the "Success" page here (it should contain the word "access_token"):'
-    while tinder.access_token.blank?
-      access_url = gets.chomp
-      tinder.access_token = access_url[/access_token=.*[&^]/]
-      puts "Sorry, we couldn't find the access_token in that URL, please try again, and enter the new URL:" if tinder.access_token.blank?
+
+    if File.exists?("facebook_token.txt")
+      token = `cat facebook_token.txt`.chomp
+      if token.present?
+        puts "We've got your last access_token on file. But they only last a few hours, so it may have expired by now. Retry with this one? (type yes or no)"
+        if ['yes', 'y'].include? gets.chomp
+          tinder.access_token = token
+        end
+      end
     end
-    tinder.access_token.gsub!(/access_token=/, '')
-    tinder.access_token.gsub!(/&/, '')
+
+    if tinder.access_token.blank?
+      puts 'Great. Now we need an access token. Open this URL in your browser, and when you hit the Facebook "Success" page, *immediately* copy the URL. You will be redirected away within about 2 seconds, so be fast. (You can try as many times as you need though). Here\'s the URL:'
+      puts ""
+      puts "https://www.facebook.com/dialog/oauth?client_id=464891386855067&redirect_uri=https://www.facebook.com/connect/login_success.html&scope=basic_info,email,public_profile,user_about_me,user_activities,user_birthday,user_education_history,user_friends,user_interests,user_likes,user_location,user_photos,user_relationship_details&response_type=token"
+      puts ""
+      puts 'Enter the URL of the "Success" page here (it should contain the word "access_token"):'
+      while tinder.access_token.blank?
+        access_url = gets.chomp
+        tinder.access_token = access_url[/access_token=.*[&^]/]
+        puts "Sorry, we couldn't find the access_token in that URL, please try again, and enter the new URL:" if tinder.access_token.blank?
+      end
+      tinder.access_token.gsub!(/access_token=/, '')
+      tinder.access_token.gsub!(/&/, '')
+      `echo #{tinder.access_token} > facebook_token.txt`
+    end
 
     puts "\n\n==============================\n\n\n"
 
